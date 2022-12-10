@@ -1,0 +1,11 @@
+Template Methodパターンを用いてStrategyTestと全く同じ動作をするプログラムを作る場合、課題1で作成したRectDotT, CircleStarTの他に、
+"★"で長方形を描画するクラス(RectStarT)と、"*"で円を描画するクラス(CircleDotT)が必要となる。
+重複した記述を避けるためには、描画する形や描画に使う文字を基準とした抽象クラスを用いればよい。
+しかし、形と文字の2つの抽象クラスを継承する必要があるため、多重継承とする必要があり、継承の関係が複雑になる問題がある。
+
+本課題で扱った図形や描画方法において、
+Template MethodパターンではRectDotT, CircleStarT, RectStarT, CircleDotTの4つ、
+StrategyパターンではPlotDot, PlotCircle, RectS, CircleSの4つ、のようにクラス数は同じであった。
+しかし、図形と描画方法が増加したとき、例えばそれぞれ5種類となった場合、
+Strategyパターンでは5+5の10クラスで実装できるが、Template Methodパターンでは5*5の25クラスが必要となる。
+このようにTemplate Methodパターンには、扱う図形や描画方法の種類が増えるに伴って、クラス数が急激に増加する問題がある。
