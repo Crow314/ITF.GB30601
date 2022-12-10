@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import binascii
+import traceback
+
 import nfc
 import time
 import requests
