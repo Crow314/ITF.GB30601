@@ -5,8 +5,6 @@ import traceback
 
 import nfc
 import time
-import requests
-import json
 import subprocess
 
 from member import Member
@@ -26,15 +24,9 @@ target_req_suica.sensf_req = bytearray.fromhex("0000030000")
 
 print('Suica waiting...')
 
-def notify_in_out(txt):
-    WEB_HOOK_URL = 'https://hooks.slack.com/services/******'
-    requests.post(WEB_HOOK_URL, data=json.dumps({
-        "text": txt,
-    }))
-
 
 if __name__ == '__main__':
-    workdir = os.getcwd()
+    WORKDIR = os.getcwd()
 
     try:
         clf = nfc.ContactlessFrontend('usb:072f:2200')
@@ -51,20 +43,13 @@ if __name__ == '__main__':
             idm = binascii.hexlify(tag.idm)
             idm_str = idm.decode('utf-8')
 
-            Member.load_members(workdir)
+            Member.load_members(WORKDIR)
 
             if idm_str in Member.members:
-                if Member.members[idm_str].state == 0:  # 入室した時
-                    subprocess.Popen(['aplay', workdir + 'in/okaeri.wav'])
-                    Member.members[idm_str].state = 1
-                    notify_in_out(Member.members[idm_str].name + 'が入室しました')
-                else:  # 退室した時
-                    subprocess.Popen(['aplay', workdir + 'out/sayonara.wav'])
-                    Member.members[idm_str].state = 0
-                    notify_in_out(Member.members[idm_str].name + 'が退室しました')
+                Member.members[idm_str].pass_gate()
 
             print(idm_str)
-            Member.store_members(workdir)
+            Member.store_members(WORKDIR)
 
             time.sleep(TIME_wait)
         # end if

@@ -1,14 +1,24 @@
 from __future__ import annotations
 import json
-from json import JSONEncoder, JSONDecoder
+from json import JSONEncoder
+
+import requests
+
+from final.in_out_state import InOutState
+from in_out_state import InOutContext, OutState
 
 
-class Member:
+def notify_in_out(txt: str):
+    url = 'https://hooks.slack.com/services/******'
+    requests.post(url, data=json.dumps({"text": txt}))
+
+
+class Member(InOutContext):
     members: dict[str, Member]
 
     _idm: str
     _name: str
-    _state: int
+    _state: InOutState
 
     @classmethod
     def load_members(cls, workdir: str):
@@ -30,7 +40,13 @@ class Member:
     def __init__(self, idm: str, name: str):
         self._idm = idm
         self._name = name
-        self._state = 0  # out state
+        self._state = OutState.get_instance()
+
+    def pass_gate(self):
+        notify_in_out(self.state.pass_gate(self, self.name))
+
+    def set_state(self, state: InOutState):
+        self._state = state
 
     @property
     def idm(self) -> str:
@@ -41,15 +57,8 @@ class Member:
         return self._name
 
     @property
-    def state(self) -> int:
+    def state(self) -> InOutState:
         return self._state
-
-    @state.setter
-    def state(self, state: int):
-        if state in {0, 1}:
-            self._state = state
-        else:
-            raise ValueError
 
 
 class MembersJSONEncoder(JSONEncoder):
