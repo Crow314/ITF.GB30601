@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import binascii
 import os
+import signal
 import traceback
 
 import nfc
@@ -9,24 +10,29 @@ import subprocess
 
 from member import Member
 
-# Suica待ち受けの1サイクル秒
-TIME_cycle = 1.0
-# Suica待ち受けの反応インターバル秒
-TIME_interval = 0.2
-# タッチされてから次の待ち受けを開始するまで無効化する秒
-TIME_wait = 2
 
-# NFC接続リクエストのための準備
-# 212F(FeliCa)で設定
-target_req_suica = nfc.clf.RemoteTarget("212F")
-# 0003(Suica)
-target_req_suica.sensf_req = bytearray.fromhex("0000030000")
-
-print('Suica waiting...')
+def sig_handler():
+    global clf
+    clf.close()
 
 
 if __name__ == '__main__':
     WORKDIR = os.getcwd()
+
+    # Suica待ち受けの1サイクル秒
+    cycle_time = 1.0
+    # Suica待ち受けの反応インターバル秒
+    interval_time = 0.2
+    # タッチされてから次の待ち受けを開始するまで無効化する秒
+    sleep_time = 2
+
+    # NFC接続リクエストのための準備
+    # 212F(FeliCa)で設定
+    target_req_suica = nfc.clf.RemoteTarget("212F")
+    # 0003(Suica)
+    target_req_suica.sensf_req = bytearray.fromhex("0000030000")
+
+    print('Suica waiting...')
 
     try:
         clf = nfc.ContactlessFrontend('usb:072f:2200')
@@ -35,8 +41,11 @@ if __name__ == '__main__':
         traceback.print_exc()
         raise
 
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+
     while True:
-        target_res = clf.sense(target_req_suica, iterations=int(TIME_cycle//TIME_interval)+1, interval=TIME_interval)
+        target_res = clf.sense(target_req_suica, iterations=int(cycle_time // interval_time) + 1, interval=interval_time)
         if target_res is not None:
             tag = nfc.tag.activate_tt3(clf, target_res)
             tag.sys = 3
@@ -51,7 +60,4 @@ if __name__ == '__main__':
             print(idm_str)
             Member.store_members(WORKDIR)
 
-            time.sleep(TIME_wait)
-        # end if
-    # end while
-    clf.close()
+            time.sleep(sleep_time)
