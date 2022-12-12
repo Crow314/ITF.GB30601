@@ -9,6 +9,8 @@ import requests
 import json
 import subprocess
 
+from member import Member
+
 # Suica待ち受けの1サイクル秒
 TIME_cycle = 1.0
 # Suica待ち受けの反応インターバル秒
@@ -24,12 +26,6 @@ target_req_suica.sensf_req = bytearray.fromhex("0000030000")
 
 print('Suica waiting...')
 
-idms = {'0123456789012345': "user01"}
-
-# for i,j in json_dict.items():
-#    print(i,j)
-
-
 def notify_in_out(txt):
     WEB_HOOK_URL = 'https://hooks.slack.com/services/******'
     requests.post(WEB_HOOK_URL, data=json.dumps({
@@ -39,13 +35,6 @@ def notify_in_out(txt):
 
 if __name__ == '__main__':
     workdir = os.getcwd()
-
-    with open(workdir + 'in_out.json', 'r') as f:
-        json_dict = json.load(f)
-
-    for idm in idms.values():
-        if idm not in json_dict.keys():
-            json_dict[idm] = 0
 
     try:
         clf = nfc.ContactlessFrontend('usb:072f:2200')
@@ -61,18 +50,22 @@ if __name__ == '__main__':
             tag.sys = 3
             idm = binascii.hexlify(tag.idm)
             idm_str = idm.decode('utf-8')
-            if idm_str in idms.keys():
-                if json_dict[idms[idm_str]] == 0:  # 入室した時
+
+            Member.load_members(workdir)
+
+            if idm_str in Member.members:
+                if Member.members[idm_str].state == 0:  # 入室した時
                     subprocess.Popen(['aplay', workdir + 'in/okaeri.wav'])
-                    json_dict[idms[idm_str]] = 1
-                    notify_in_out(idms[idm_str]+'が入室しました')
+                    Member.members[idm_str].state = 1
+                    notify_in_out(Member.members[idm_str].name + 'が入室しました')
                 else:  # 退室した時
                     subprocess.Popen(['aplay', workdir + 'out/sayonara.wav'])
-                    json_dict[idms[idm_str]] = 0
-                    notify_in_out(idms[idm_str]+'が退室しました')
+                    Member.members[idm_str].state = 0
+                    notify_in_out(Member.members[idm_str].name + 'が退室しました')
+
             print(idm_str)
-            with open(workdir + 'in_out.json', 'w') as fw:
-                json.dump(json_dict, fw, indent=2, ensure_ascii=False)
+            Member.store_members(workdir)
+
             time.sleep(TIME_wait)
         # end if
     # end while
