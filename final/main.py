@@ -54,10 +54,10 @@ if __name__ == '__main__':
 
             Member.load_members(WORKDIR)
 
-            if idm_str in Member.members:
+            if Member.is_exist(idm_str):
                 Member.members[idm_str].pass_gate()
 
-            print(idm_str)
-            Member.store_members(WORKDIR)
+                print(idm_str)
+                Member.store_members(WORKDIR)
 
             time.sleep(sleep_time)

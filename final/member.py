@@ -37,6 +37,10 @@ class Member(InOutContext):
         with open(workdir + 'members.json', 'w') as fw:
             json.dump(cls.members, fw, cls=MembersJSONEncoder, indent=2, ensure_ascii=False)
 
+    @classmethod
+    def is_exist(cls, idm: str):
+        return idm in cls.members
+
     def __init__(self, idm: str, name: str):
         self._idm = idm
         self._name = name
